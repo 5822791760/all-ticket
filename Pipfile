@@ -8,6 +8,7 @@ requests = "*"
 beautifulsoup4 = "*"
 selenium = "*"
 grequests = "*"
+aiohttp = "*"
 
 [dev-packages]
 ipykernel = "*"
