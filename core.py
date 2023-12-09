@@ -1,20 +1,118 @@
+import datetime
+import time
 import grequests
 import aiohttp
 import asyncio
 import requests
 
-token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndlZ2V3b24yOTJAZ2V0bW9sYS5jb20iLCJ1cmxiYWNrIjoid3d3LmFsbHRpY2tldC5jb20iLCJwYXltZW50Q2hhbm5lbCI6IkMwNyIsInRpY2tldFR5cGUiOiIwMSIsImxhbmciOiJFIiwiZGF0YSI6Ijc5MzA2YWI1MjUzM2RmNzEzYTExMzU1NzdmODg4ZjY1YjA1NDBmOTIzMTU1NWI5N2MyMGYwMzU3YWZkODg3NTdiNTQ5NjliYzRmY2JiM2VhZTk0NzA5YTljNDAxYTk2M2I1M2Q2ZGM4ZmExZGI3NzA4ZjM0ZjhiYjI0YzZjZjYyOTNlMGQyYzdiNjU0YzZjNTc4ODk5NTgxOGFiOWYyZDY3MjgzNDU3ZmJhNjgxNTlhY2VhZjI5ZGNlYTJhNDc1MzBmMzdlMDJjMjVjMTQ0ZTQwNTgzMGMyZGFmNTVhNDc4ZjZhN2Q3NTQyMDgzYzljOTQzNWM3MTEzNjk3OWVhZmRhMzI2NjAzNTVkNjE4ZDQ4NjNhZGE5YjE2MmIwMzgxYTRlNDlmYTA0ODQ0ZGFmNDA3MWI4OTAyYTdiNjc4MWNlZWQ5OWEzNDEyOTIwZTI3Mjc2N2RlMTkwMzhlOGQ1ZTE0YTNkODI2Y2NjZTlhNmE4ZDdlZDdiNzhmZDc3ZDllZjE2NDc4MmIxODdiZWZhMTIxNGZjMmEwNmJkMDRmNzg1NGU3MDA5Mzc5ZmY3NzRlMWNkNDk0ZDIxYjhkMWZhNTEyMmFlMjRjMzZkYjU4YTlmM2QwMDFkYzY2YWNlNmVjNTQyYjQ3OGQ5NWFlZDRlY2Q1ZTQ4YjQ1MDkyMTZhNjQ1NTU5MGJmMWVlY2JlMWQ5NDU3YzIwNmY3YzE4MjM1MmM5ZDAwOTAzYmFiZjVkYzczNWVhNzI5Y2M1Zjg4NmJjODk3Y2Y5MzM5ZTBlNzEwNTJjNzQxNGRhNmM0NzdmZjJhMWZmMjE2NGQ2YzhhMjJlZTA0YzZmOWY4ZmU0ODZhOTAyYTkzZjExODIzZDcwOWY2M2M2MzQ5MWMxZjQ5MTU4YTdkNDQ5ZTI0MDFkOTlkODJkYjFmMDE1NWZhNTc0MDNiMThhY2U4ZWNlNzQzOWMxN2E2MGZhMGI2NzU1NzUwZmUiLCJ0aW1lU3RhbXAiOjAuMTk4NzEwMjQ4NzQ2ODE2NjQsImlhdCI6MTcwMjE0OTA2MiwiZXhwIjoxNzAyMTU5ODYyLCJpc3MiOiJjc2F0azE4In0.i_u_oW7m-Hk_Y2T1VK1AT1yTlN_J0sBQImbQ3xcXrdg'
-event = 'SEVENTEENFOLLOWTOBKK'
+TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndlZ2V3b24yOTJAZ2V0bW9sYS5jb20iLCJ1cmxiYWNrIjoid3d3LmFsbHRpY2tldC5jb20iLCJwYXltZW50Q2hhbm5lbCI6IkMwNyIsInRpY2tldFR5cGUiOiIwMSIsImxhbmciOiJFIiwiZGF0YSI6Ijc5MzA2YWI1MjUzM2RmNzEzYTExMzU1NzdmODg4ZjY1YjA1NDBmOTIzMTU1NWI5N2MyMGYwMzU3YWZkODg3NTdiNTQ5NjliYzRmY2JiM2VhZTk0NzA5YTljNDAxYTk2M2I1M2Q2ZGM4ZmExZGI3NzA4ZjM0ZjhiYjI0YzZjZjYyOTNlMGQyYzdiNjU0YzZjNTc4ODk5NTgxOGFiOWYyZDY3MjgzNDU3ZmJhNjgxNTlhY2VhZjI5ZGNlYTJhNDc1MzBmMzdlMDJjMjVjMTQ0ZTQwNTgzMGMyZGFmNTVhNDc4ZjZhN2Q3NTQyMDgzYzljOTQzNWM3MTEzNjk3OWVhZmRhMzI2NjAzNTVkNjE4ZDQ4NjNhZGE5YjE2MmIwMzgxYTRlNDlmYTA0ODQ0ZGFmNDA3MWI4OTAyYTdiNjc4MWNlZWQ5OWEzNDEyOTIwZTI3Mjc2N2RlMTkwMzhlOGQ1ZTE0YTNkODI2Y2NjZTlhNmE4ZDdlZDdiNzhmZDc3ZDllZjE2NDc4MmIxODdiZWZhMTIxNGZjMmEwNmJkMDRmNzg1NGU3MDA5Mzc5ZmY3NzRlMWNkNDk0ZDIxYjhkMWZhNTEyMmFlMjRjMzZkYjU4YTlmM2QwMDFkYzY2YWNlNmVjNTQyYjQ3OGQ5NWFlZDRlY2Q1ZTQ4YjQ1MDkyMTZhNjQ1NTU5MGJmMWVlY2JlMWQ5NDU3YzIwNmY3YzE4MjM1MmM5ZDAwOTAzYmFiZjVkYzczNWVhNzI5Y2M1Zjg4NmJjODk3Y2Y5MzM5ZTBlNzEwNTJjNzQxNGRhNmM0NzdmZjJhMWZmMjE2NGQ2YzhhMjJlZTA0YzZmOWY4ZmU0ODZhOTAyYTkzZjExODIzZDcwOWY2M2M2MzQ5MWMxZjQ5MTU4YTdkNDQ5ZTI0MDFkOTlkODJkYjFmMDE1NWZhNTc0MDNiMThhY2U4ZWNlNzQzOWMxN2E2MGZhMGI2NzU1NzUwZmUiLCJ0aW1lU3RhbXAiOjAuMTg2MjI1ODUwODMzNjcwNzEsImlhdCI6MTcwMjE1MjEwNSwiZXhwIjoxNzAyMTYyOTA1LCJpc3MiOiJjc2F0azE4In0.XiXO_NKbGPEle8Y5RqfBIRKYInUsA7V8rvPtATWFS3Y'
 
-RETRY_SEAT_COUNT = 3
+class MenuManager:
+    def __init__(self):
+        self.base_data = self.get_base_data()
+        self.concert_id = self.select_concert()
+        
+    def get_base_data(self):
+        base_data = {
+            'url': 'https://www.allticket.com/',
+            'headers': {
+                'authorization': TOKEN,
+                'Content-Type': 'application/json'
+            }
+        }
 
-baseData = {
-    'url': 'https://www.allticket.com/',
-    'headers': {
-        'authorization': token,
-        'Content-Type': 'application/json'
-    }
-}
+        # req = base_data.copy()
+        # req['url'] = 'https://api.allticket.com/customer/get-purchase-history'
+        # req['json'] = { 'headers': { 'normalizedNames': {}, 'lazyUpdate': None } }
+        
+        # code = requests.post(**req).status_code
+        # if code != 200:
+        #     print("Wrong Token try again")
+        #     return self.get_base_data()
+
+        return base_data
+        
+    
+    def select_concert(self) -> str:
+        req = self.base_data.copy()
+        req['url'] = 'https://api.allticket.com/content/get-all-events'
+        req['json'] = { 'groupKey': 'concert' }
+        res = requests.post(**req).json()
+        items = res['data']['event']['items']
+        
+        for i, item in enumerate(items):
+            print(f"ID: {i}")
+            print(f"Name: {item['name']}")
+            print(f"ชื่อ: {item['namePos']}")
+            print()
+        
+        return items[self.get_user_input(convert_int=True)]['id']
+        
+    def get_user_input(self, message="Select Concert By ID: ", convert_int=False):
+        user_i = input(message).strip()
+        
+        if convert_int:
+            if not user_i.isnumeric():
+                return self.get_user_input(message, convert_int)
+            
+            user_i = int(user_i)
+        
+        return user_i
+    
+    async def book_now(self):
+        self.perform = await PerformManager(self.concert_id, self.base_data).book_seats()
+        return self
+    
+    async def book_later(self):
+        now = datetime.datetime.now()
+        
+        target_time = self.get_user_input("Please Input Time in this format %H:%M: ")
+    
+        target_hour, target_minute = map(int, target_time.split(':'))
+        target_datetime = datetime.datetime(now.year, now.month, now.day, target_hour, target_minute)
+        
+        if now > target_datetime:
+            target_datetime += datetime.timedelta(days=1)
+
+
+        count_down_sec = 10
+        notify_time = target_datetime - datetime.timedelta(seconds=count_down_sec)
+        
+        if now > notify_time:
+            notify_time += datetime.timedelta(days=1)
+
+        time_difference = notify_time - now
+        total_seconds = time_difference.total_seconds()
+
+        print()
+        print(f"Booking Start At: {target_time}")
+        print(f"In {total_seconds + count_down_sec} Seconds")
+        print()
+        time.sleep(total_seconds)
+
+        for i in range(count_down_sec, 0, -1):
+            print(f"Countdown: {i} seconds")
+            time.sleep(1)
+
+        print()
+        print("Booking Start!")
+        print()
+
+        self.perform = await PerformManager(self.concert_id, self.base_data).book_seats()
+        return self
+    
+    async def select_book_options(self):
+        li = [
+            self.book_now,
+            self.book_later,
+        ]
+
+        print("[0] Book Now")
+        print("[1] Schedule Book")
+        
+        user_i = self.get_user_input(message="Select Number: ", convert_int=True)
+
+        return await li[user_i]()
 
 class PerformManager:
     id: int
@@ -25,12 +123,11 @@ class PerformManager:
     zones: list
     booked_seat: list
 
-    def __init__(self, token, event) -> None:
-        self.token = token
-        self.event = event
+    def __init__(self, id, base_data) -> None:
+        self.id = id
+        self.base_data = base_data
         self.seat_needed = None
         self.max_reserve_each = None
-        self.id = None
         self.round_id = None
         self.zone_greqs = []
         self.seat_greqs = []
@@ -40,9 +137,12 @@ class PerformManager:
         
     def done(self):
         return self.seat_needed <= 0
+    
+    def get_base_data(self):
+        return self.base_data.copy()
 
     def get_id(self):
-        req = baseData.copy()
+        req = self.get_base_data()
         req['url'] = 'https://api.allticket.com/content/get-all-events'
         req['json'] = { 'groupKey': 'concert' }
         res = requests.post(**req).json()
@@ -57,7 +157,7 @@ class PerformManager:
         if not self.id:
             self.get_id()        
 
-        req = baseData.copy()
+        req = self.get_base_data()
         req['url'] = 'https://api.allticket.com/booking/get-round'
         req['json'] = { 'performId': self.id }
         res = requests.post(**req).json()
@@ -70,7 +170,7 @@ class PerformManager:
         if not self.round_id:
             self.get_round_id()
         
-        req = baseData.copy()
+        req = self.get_base_data()
         req['url'] = 'https://api.allticket.com/booking/seat-available'
         req['json'] = { 'performId': self.id, 'roundId': self.round_id }
         res = requests.post(**req).json()
@@ -98,7 +198,7 @@ class PerformManager:
 
             zone.zone_type = data['zone_type']
             seats = []
-
+            
             for seat_data in data['seats_available']:
                 screen_label = seat_data['screenLabel']
                 
@@ -149,7 +249,7 @@ class PerformManager:
             if not seat:
                 continue
             
-            req = baseData.copy()
+            req = self.get_base_data()
             req['url'] = 'https://api.allticket.com/payment/payment/outlet'
             req['json'] = {
                 "payment_channel": "outlet",
@@ -185,11 +285,14 @@ class ZoneManager:
     def done(self):
         self.perform.seat_needed <= 0
         
+    def get_base_data(self):
+        return self.perform.base_data.copy()
+        
     def get_req(self):
         if self.done():
             return []
         
-        req = baseData.copy()
+        req = self.get_base_data()
         perform = self.perform
 
         req['url'] = 'https://api.allticket.com/booking/get-seat'
@@ -218,11 +321,14 @@ class SeatManager:
     def done(self):
         return self.zone.perform.seat_needed <= 0
     
+    def get_base_data(self):
+        return self.zone.perform.base_data.copy()
+    
     def get_req(self):
         zone = self.zone
         perform = zone.perform
 
-        req = baseData.copy()
+        req = self.get_base_data()
         req['url'] = 'https://api.allticket.com/booking/handler-reserve'
         req['json'] = {
             "performId": perform.id,
@@ -247,7 +353,7 @@ class SeatManager:
         self.booking_retry = data['retry']
 
     async def get_payment_req(self):
-        req = baseData.copy()
+        req = self.get_base_data()
         req['url'] = 'https://api.allticket.com/booking/check-booking'
         req['json'] = { "uuid": self.booking_id }
 
@@ -267,8 +373,13 @@ class SeatManager:
                     return self
 
                 return None
-                
-
-perf = asyncio.run(PerformManager(token, event).book_seats())
-for v in perf.booked_seat:
-    print(v.ids)
+            
+if __name__ == '__main__':
+    menu = asyncio.run(MenuManager().select_book_options())
+    perform = menu.perform
+    
+    print("Booked Seat:")
+    for i, seat in enumerate(perform.booked_seat):
+        print(f"Set {i}")
+        print(', '.join(seat.ids))
+        print()
