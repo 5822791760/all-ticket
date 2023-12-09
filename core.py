@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 import requests
 
-token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndlZ2V3b24yOTJAZ2V0bW9sYS5jb20iLCJ1cmxiYWNrIjoid3d3LmFsbHRpY2tldC5jb20iLCJwYXltZW50Q2hhbm5lbCI6IkMwNyIsInRpY2tldFR5cGUiOiIwMSIsImxhbmciOiJFIiwiZGF0YSI6Ijc5MzA2YWI1MjUzM2RmNzEzYTExMzU1NzdmODg4ZjY1YjA1NDBmOTIzMTU1NWI5N2MyMGYwMzU3YWZkODg3NTdiNTQ5NjliYzRmY2JiM2VhZTk0NzA5YTljNDAxYTk2M2I1M2Q2ZGM4ZmExZGI3NzA4ZjM0ZjhiYjI0YzZjZjYyOTNlMGQyYzdiNjU0YzZjNTc4ODk5NTgxOGFiOWYyZDY3MjgzNDU3ZmJhNjgxNTlhY2VhZjI5ZGNlYTJhNDc1MzBmMzdlMDJjMjVjMTQ0ZTQwNTgzMGMyZGFmNTVhNDc4ZjZhN2Q3NTQyMDgzYzljOTQzNWM3MTEzNjk3OWVhZmRhMzI2NjAzNTVkNjE4ZDQ4NjNhZGE5YjE2MmIwMzgxYTRlNDlmYTA0ODQ0ZGFmNDA3MWI4OTAyYTdiNjc4MWNlZWQ5OWEzNDEyOTIwZTI3Mjc2N2RlMTkwMzhlOGQ1ZTE0YTNkODI2Y2NjZTlhNmE4ZDdlZDdiNzhmZDc3ZDllZjE2NDc4MmIxODdiZWZhMTIxNGZjMmEwNmJkMDRmNzg1NGU3MDA5Mzc5ZmY3NzRlMWNkNDk0ZDIxYjhkMWZhNTEyMmFlMjRjMzZkYjU4YTlmM2QwMDFkYzY2YWNlNmVjNTQyYjQ3OGQ5NWFlZDRlY2Q1ZTQ4YjQ1MDkyMTZhNjQ1NTU5MGJmMWVlY2JlMWQ5NDU3YzIwNmY3YzE4MjM1MmM5ZDAwOTAzYmFiZjVkYzczNWVhNzI5Y2M1Zjg4NmJjODk3Y2Y5MzM5ZTBlNzEwNTJjNzQxNGRhNmM0NzdmZjJhMWZmMjE2NGQ2YzhhMjJlZTA0YzZmOWY4ZmU0ODZhOTAyYTkzZjExODIzZDcwOWY2M2M2MzQ5MWMxZjQ5MTU4YTdkNDQ5ZTI0MDFkOTlkODJkYjFmMDE1NWZhNTc0MDNiMThhY2U4ZWNlNzQzOWMxN2E2MGZhMGI2NzU1NzUwZmUiLCJ0aW1lU3RhbXAiOjAuNTk4MTA5MTI4MDM5MDA3NCwiaWF0IjoxNzAyMTQ3MTc1LCJleHAiOjE3MDIxNTc5NzUsImlzcyI6ImNzYXRrMTgifQ.69hHHgTQgxoP73twygTJw1yzWxc3PciDSDPSmtbX8AM'
+token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndlZ2V3b24yOTJAZ2V0bW9sYS5jb20iLCJ1cmxiYWNrIjoid3d3LmFsbHRpY2tldC5jb20iLCJwYXltZW50Q2hhbm5lbCI6IkMwNyIsInRpY2tldFR5cGUiOiIwMSIsImxhbmciOiJFIiwiZGF0YSI6Ijc5MzA2YWI1MjUzM2RmNzEzYTExMzU1NzdmODg4ZjY1YjA1NDBmOTIzMTU1NWI5N2MyMGYwMzU3YWZkODg3NTdiNTQ5NjliYzRmY2JiM2VhZTk0NzA5YTljNDAxYTk2M2I1M2Q2ZGM4ZmExZGI3NzA4ZjM0ZjhiYjI0YzZjZjYyOTNlMGQyYzdiNjU0YzZjNTc4ODk5NTgxOGFiOWYyZDY3MjgzNDU3ZmJhNjgxNTlhY2VhZjI5ZGNlYTJhNDc1MzBmMzdlMDJjMjVjMTQ0ZTQwNTgzMGMyZGFmNTVhNDc4ZjZhN2Q3NTQyMDgzYzljOTQzNWM3MTEzNjk3OWVhZmRhMzI2NjAzNTVkNjE4ZDQ4NjNhZGE5YjE2MmIwMzgxYTRlNDlmYTA0ODQ0ZGFmNDA3MWI4OTAyYTdiNjc4MWNlZWQ5OWEzNDEyOTIwZTI3Mjc2N2RlMTkwMzhlOGQ1ZTE0YTNkODI2Y2NjZTlhNmE4ZDdlZDdiNzhmZDc3ZDllZjE2NDc4MmIxODdiZWZhMTIxNGZjMmEwNmJkMDRmNzg1NGU3MDA5Mzc5ZmY3NzRlMWNkNDk0ZDIxYjhkMWZhNTEyMmFlMjRjMzZkYjU4YTlmM2QwMDFkYzY2YWNlNmVjNTQyYjQ3OGQ5NWFlZDRlY2Q1ZTQ4YjQ1MDkyMTZhNjQ1NTU5MGJmMWVlY2JlMWQ5NDU3YzIwNmY3YzE4MjM1MmM5ZDAwOTAzYmFiZjVkYzczNWVhNzI5Y2M1Zjg4NmJjODk3Y2Y5MzM5ZTBlNzEwNTJjNzQxNGRhNmM0NzdmZjJhMWZmMjE2NGQ2YzhhMjJlZTA0YzZmOWY4ZmU0ODZhOTAyYTkzZjExODIzZDcwOWY2M2M2MzQ5MWMxZjQ5MTU4YTdkNDQ5ZTI0MDFkOTlkODJkYjFmMDE1NWZhNTc0MDNiMThhY2U4ZWNlNzQzOWMxN2E2MGZhMGI2NzU1NzUwZmUiLCJ0aW1lU3RhbXAiOjAuMTk4NzEwMjQ4NzQ2ODE2NjQsImlhdCI6MTcwMjE0OTA2MiwiZXhwIjoxNzAyMTU5ODYyLCJpc3MiOiJjc2F0azE4In0.i_u_oW7m-Hk_Y2T1VK1AT1yTlN_J0sBQImbQ3xcXrdg'
 event = 'SEVENTEENFOLLOWTOBKK'
 
 RETRY_SEAT_COUNT = 3
@@ -43,9 +43,10 @@ class PerformManager:
 
     def get_id(self):
         req = baseData.copy()
-        req['url'] = 'https://api.allticket.com/content/get-home'
+        req['url'] = 'https://api.allticket.com/content/get-all-events'
+        req['json'] = { 'groupKey': 'concert' }
         res = requests.post(**req).json()
-        items = res['data']['banner_']['items']
+        items = res['data']['event']['items']
         found_con = next(filter(lambda x: x['performUri'] == self.event, items), None)
         if not found_con:
             raise Exception('NOT FOUND CONCERT THIS NAME')
@@ -156,7 +157,7 @@ class PerformManager:
                 "reserveId": seat.reserve_id,
                 "insureProducts": []
             }
-            
+
             if self.done():
                 break
 
@@ -269,3 +270,5 @@ class SeatManager:
                 
 
 perf = asyncio.run(PerformManager(token, event).book_seats())
+for v in perf.booked_seat:
+    print(v.ids)
