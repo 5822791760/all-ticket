@@ -1,34 +1,59 @@
-from resources.perform import PerformManager
-from resources.libs import os, requests, datetime, time, load_dotenv
+from resources.account import AccountManager
+from resources.libs import (
+    os,
+    requests,
+    datetime,
+    time,
+    load_dotenv,
+    grequests,
+    json,
+    threading,
+    sys,
+)
 
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
+TOKENS = json.loads(os.getenv("TOKENS"))
 
 
 class MenuManager:
-    perform: PerformManager
-
     def __init__(self):
-        self.base_data = self.get_base_data()
-        self.concert_id = self.select_concert()
-        self.perform = None
+        self.concert_id = None
+        self.concert_name = None
+        self.accounts = self.populate_account()
+        self.select_concert()
 
-    def get_base_data(self):
-        base_data = {
+    def populate_account(self):
+        greqs = []
+        payload = {
             "url": "https://www.allticket.com/",
             "headers": {"authorization": TOKEN, "Content-Type": "application/json"},
         }
 
-        req = base_data.copy()
-        req["url"] = "https://api.allticket.com/customer/get-purchase-history"
-        req["json"] = {"headers": {"normalizedNames": {}, "lazyUpdate": None}}
+        for token in TOKENS:
+            payload = {
+                "url": "https://api.allticket.com/customer/get-purchase-history",
+                "headers": {"authorization": token, "Content-Type": "application/json"},
+                "json": {"headers": {"normalizedNames": {}, "lazyUpdate": None}},
+            }
 
-        code = requests.post(**req).status_code
-        if code != 200:
-            raise Exception("Wrong Token Please fix your env")
+            greqs.append(grequests.post(**payload))
 
-        return base_data
+        accounts = []
+        for i, res in grequests.imap_enumerated(greqs):
+            token = TOKENS[i]
+
+            if res.status_code != 200:
+                print(res.json())
+                print(token)
+                input(f"Token at index {i} is incorrent fix it")
+                continue
+
+            data = res.json()["data"]
+            accounts.append(AccountManager(token, data["email"]))
+
+        return accounts
 
     def filter_page(self, items):
         user_i = self.get_user_input("Type in name (eng): ").lower()
@@ -38,27 +63,34 @@ class MenuManager:
 
     def select_concert(self, items=None) -> str:
         if items is None:
-            req = self.base_data.copy()
-            req["url"] = "https://api.allticket.com/content/get-all-events"
-            req["json"] = {"groupKey": "concert"}
+            req = {
+                "url": "https://api.allticket.com/content/get-all-events",
+                "headers": {
+                    "authorization": "",
+                    "Content-Type": "application/json",
+                },
+                "json": {"groupKey": "concert"},
+            }
+
             res = requests.post(**req).json()
             items = res["data"]["event"]["items"]
 
         user_i = ""
         while not user_i.isnumeric():
+            print("==================================")
             for i, item in enumerate(items):
                 print(f"ID: {i}")
                 print(f"Name: {item['name']}")
                 print(f"ชื่อ: {item['namePos']}")
                 print()
 
+            print("==================================")
             print("[f] To filter")
             print("[r] To reset")
+            print("[b] to book")
             user_i = self.get_user_input("Select ID: ")
-            if user_i is None:
-                return None
-
             user_i = user_i.lower()
+            print()
 
             if user_i == "f":
                 return self.filter_page(items)
@@ -66,21 +98,49 @@ class MenuManager:
             if user_i == "r":
                 return self.select_concert()
 
-        return items[int(user_i)]["id"]
+            if user_i == "b":
+                return self.select_book_options()
+
+        self.concert_id = items[int(user_i)]["id"]
+        self.concert_name = items[int(user_i)]["name"]
+
+        return self.select_seat_needed()
 
     def select_seat_needed(self):
-        # sets = []
-        # print("If Done Type d or enter")
-        print()
-        seat_need = self.get_user_input("Select seats per set: ", convert_int=True)
-        return seat_need
+        account_length = len(self.accounts)
 
-    def get_user_input(self, message="Select Concert By ID: ", convert_int=False):
-        print("[e] To exit")
+        for _ in range(account_length):
+            print()
+
+            print("Select User:")
+            print()
+            self.show_account_info()
+
+            user_index = -1
+            while not (0 <= user_index <= account_length):
+                user_index = self.get_user_input("User ID: ", convert_int=True)
+                print()
+
+            seat_need = self.get_user_input("Select seats amount: ", True, True)
+            print()
+
+            self.accounts[user_index].ready_set(seat_need)
+            return self.select_concert()
+
+    def get_user_input(
+        self,
+        message="Select Concert By ID: ",
+        convert_int=False,
+        hide_exit=False,
+    ):
+        if not hide_exit:
+            print("[e] To exit")
+
         user_i = input(message).strip()
 
-        if user_i == "e":
-            return None
+        if not hide_exit and user_i == "e":
+            print("EXITED")
+            sys.exit()
 
         if convert_int:
             if not user_i.isnumeric():
@@ -90,13 +150,51 @@ class MenuManager:
 
         return user_i
 
-    async def book_now(self, seat):
-        self.perform = await PerformManager(
-            self.concert_id, self.base_data, seat
-        ).book_seats()
+    def show_account_info(self, ready_only=False):
+        checks = []
+
+        print("==================================")
+        for i, acc in enumerate(self.accounts):
+            if ready_only and not acc.ready:
+                checks.append(False)
+                continue
+
+            print(f"ID: {i}")
+            acc.show_profile()
+
+        print("==================================")
+        return all(checks)
+
+    def book_all_accounts(self):
+        threads = []
+        start = time.time()
+
+        for acc in self.accounts:
+            if not acc.ready:
+                continue
+
+            thread = threading.Thread(
+                target=acc.thread_book_ticket, args=(self.concert_id,)
+            )
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        if not threads:
+            print("NOONE IS READY")
+
+        print()
+        print("==================================")
+        print(f"TIME TOOK: {round(time.time() - start, 2)}")
+        print("==================================")
+
+    def book_now(self):
+        self.book_all_accounts()
         return self
 
-    async def book_later(self, seat):
+    def book_later(self):
         now = datetime.datetime.now()
 
         target_time = self.get_user_input("Please Input Time in this format %H:%M: ")
@@ -132,25 +230,28 @@ class MenuManager:
         print("Booking Start!")
         print()
 
-        self.perform = await PerformManager(
-            self.concert_id, self.base_data, seat
-        ).book_seats()
+        self.book_all_accounts()
+
         return self
 
-    async def select_book_options(self):
-        li = [
-            self.book_now,
-            self.book_later,
-        ]
+    def select_book_options(self):
+        dic = {"n": self.book_now, "s": self.book_later}
 
-        print()
-        print("[0] Book Now")
-        print("[1] Schedule Book")
+        ready = self.show_account_info(ready_only=True)
+        if not ready:
+            input("No one select seat yet")
+            return self.select_concert()
 
-        user_i = self.get_user_input(message="Select Number: ", convert_int=True)
-        if user_i is None:
-            return self
+        print("[n] Book Now")
+        print("[s] Schedule Book")
+        print("[b] Back")
 
-        seat_need = self.select_seat_needed()
+        user_i = self.get_user_input(message="Select Action: ")
+        if user_i.lower() == "b":
+            return self.select_concert()
 
-        return await li[user_i](seat_need)
+        while user_i not in dic:
+            input("Wrong Action")
+            user_i = self.get_user_input(message="Select Action: ")
+
+        return dic[user_i]()
