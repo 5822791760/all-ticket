@@ -1,3 +1,4 @@
+import resource
 import sys
 import os
 import json

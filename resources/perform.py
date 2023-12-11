@@ -68,9 +68,6 @@ class PerformManager:
 
         zones = []
         for zone in res["data"]["seat_available"]:
-            if zone["amount"] <= self.seat_needed:
-                continue
-
             zone_manager = ZoneManager(self, zone["id"])
             zones.append(zone_manager)
             self.zone_greqs.append(grequests.post(**zone_manager.req))
@@ -98,7 +95,9 @@ class PerformManager:
 
                 seat_ids = []
                 count = 0
-                for seat in seat_data["seat"]:
+                seat_len = len(seat_data["seat"])
+
+                for i, seat in enumerate(seat_data["seat"]):
                     status = seat["status"]
 
                     if status != "A":
@@ -108,7 +107,7 @@ class PerformManager:
 
                     count += 1
 
-                    if count >= seat_needed:
+                    if count >= seat_needed or i == seat_len - 1:
                         seat_manager = SeatManager(zone, screen_label, seat_ids, count)
                         seats.append(seat_manager)
                         self.seat_greqs.append(grequests.post(**seat_manager.req))

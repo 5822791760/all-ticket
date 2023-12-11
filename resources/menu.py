@@ -45,8 +45,6 @@ class MenuManager:
             token = TOKENS[i]
 
             if res.status_code != 200:
-                print(res.json())
-                print(token)
                 input(f"Token at index {i} is incorrent fix it")
                 continue
 
@@ -125,7 +123,8 @@ class MenuManager:
             print()
 
             self.accounts[user_index].ready_set(seat_need)
-            return self.select_concert()
+
+        return self.select_concert()
 
     def get_user_input(
         self,
@@ -159,11 +158,12 @@ class MenuManager:
                 checks.append(False)
                 continue
 
+            checks.append(True)
             print(f"ID: {i}")
             acc.show_profile()
 
         print("==================================")
-        return all(checks)
+        return any(checks)
 
     def book_all_accounts(self):
         threads = []
@@ -191,33 +191,38 @@ class MenuManager:
         print("==================================")
 
     def book_now(self):
+        print()
+        print("Booking Start!")
+        print()
+
         self.book_all_accounts()
         return self
 
     def book_later(self):
+        target_time = self.get_user_input(
+            "Please Input Time in this format %H:%M:%S: "
+        ).split(":")
+        for i in range(3 - len(target_time)):
+            target_time.append("00")
+
+        target_hour, target_minute, target_second = map(int, target_time)
+
         now = datetime.datetime.now()
-
-        target_time = self.get_user_input("Please Input Time in this format %H:%M: ")
-
-        target_hour, target_minute = map(int, target_time.split(":"))
         target_datetime = datetime.datetime(
-            now.year, now.month, now.day, target_hour, target_minute
+            now.year, now.month, now.day, target_hour, target_minute, target_second
         )
 
         if now > target_datetime:
             target_datetime += datetime.timedelta(days=1)
 
-        count_down_sec = 10
+        count_down_sec = 5
         notify_time = target_datetime - datetime.timedelta(seconds=count_down_sec)
-
-        if now > notify_time:
-            notify_time += datetime.timedelta(days=1)
 
         time_difference = notify_time - now
         total_seconds = time_difference.total_seconds()
 
         print()
-        print(f"Booking Start At: {target_time}")
+        print(f"Booking Start At: {':'.join(target_time)}")
         print(f"In {total_seconds + count_down_sec} Seconds")
         print()
         time.sleep(total_seconds)
